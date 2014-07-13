@@ -10,14 +10,14 @@ class Command(BaseCommand):
             limit = int(args[0])
         else:
             limit = None
-        print 'Dequeueing Campaigns'
+        print('Dequeueing Campaigns')
         done = False
         for camp in dequeue(limit):
             done = True
             if camp:
-                print '- Dequeued campaign %s (%s)' % (camp.name, camp.campaign_id)
+                print('- Dequeued campaign %s (%s)' % (camp.name, camp.campaign_id))
             else:
-                print 'ERROR'
+                print('ERROR')
         if not done:
-            print 'Nothing to dequeue'
-        print 'Done'
+            print('Nothing to dequeue')
+        print('Done')

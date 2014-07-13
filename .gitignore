@@ -4,3 +4,4 @@
 .project
 django_mailchimp.egg-info
 dist
+*.bak

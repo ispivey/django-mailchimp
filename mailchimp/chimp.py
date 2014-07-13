@@ -78,7 +78,7 @@ class BaseChimpObject(object):
         return '<%s object: %s>' % (self.__class__.__name__, getattr(self, self.verbose_attr))
 
     def __str__(self):
-        return unicode(self).encode('utf-8')
+        return str(self).encode('utf-8')
 
 
 class Campaign(BaseChimpObject):
@@ -163,7 +163,7 @@ class Member(BaseChimpObject):
     def __getattr__(self, attr):
         if attr in self._extended_attrs:
             return self.info[attr]
-        raise AttributeError, attr
+        raise AttributeError(attr)
     
     @property
     def interests(self):
@@ -346,8 +346,8 @@ class List(BaseChimpObject):
         'conditions': simplejson.loads(self.segment_options_conditions)}
         """
         mode = all if segment_opts['match'] == 'all' else any
-        conditions = [SegmentCondition(**dict((str(k), v) for k,v in c.items())) for c in segment_opts['conditions']]
-        for email, member in self.members.items():
+        conditions = [SegmentCondition(**dict((str(k), v) for k,v in list(c.items()))) for c in segment_opts['conditions']]
+        for email, member in list(self.members.items()):
             if mode([condition.check(member) for condition in conditions]):
                 yield member
     
@@ -365,9 +365,9 @@ class Template(BaseChimpObject):
                 self.id = self.template.id
             
             def __iter__(self):
-                return iter(self.data.items())
+                return iter(list(self.data.items()))
         data = {}
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             if key in self.sections:
                 data['html_%s' % key] = value
         return BuiltTemplate(self, data)
@@ -492,7 +492,7 @@ class Connection(object):
                 raise self.DOES_NOT_EXIST[thing](id)
             
     def _get_by_key(self, thing, name, key):
-        for id, obj in getattr(self, thing).items():
+        for id, obj in list(getattr(self, thing).items()):
             if getattr(obj, name) == key:
                 return obj
         raise self.DOES_NOT_EXIST[thing]('%s=%s' % (name, key))

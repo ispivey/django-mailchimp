@@ -6,6 +6,7 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from mailchimp.utils import get_connection
+import collections
 
 
 class QueueManager(models.Manager):
@@ -94,7 +95,7 @@ class Queue(models.Model):
         # get connection and send the mails 
         c = get_connection()
         tpl = c.get_template_by_id(self.template_id)
-        content_data = dict([(str(k), v) for k,v in simplejson.loads(self.contents).items()])
+        content_data = dict([(str(k), v) for k,v in list(simplejson.loads(self.contents).items())])
         built_template = tpl.build(**content_data)
         tracking = {'opens': self.tracking_opens, 
                     'html_clicks': self.tracking_html_clicks,
@@ -160,7 +161,7 @@ class Queue(models.Model):
             return True
         if not user.is_staff:
             return False
-        if callable(getattr(self.object, 'mailchimp_can_dequeue', None)):
+        if isinstance(getattr(self.object, 'mailchimp_can_dequeue', None), collections.Callable):
             return self.object.mailchimp_can_dequeue(user)
         return user.has_perm('mailchimp.can_send') and user.has_perm('mailchimp.can_dequeue') 
     
@@ -175,7 +176,7 @@ class CampaignManager(models.Manager):
              name=camp.title, content_type=content_type, object_id=object_id,
              extra_info=extra_info)
         obj.save()
-        segment_opts = dict([(str(k), v) for k,v in segment_opts.items()])
+        segment_opts = dict([(str(k), v) for k,v in list(segment_opts.items())])
         for email in camp.list.filter_members(segment_opts):
             Reciever.objects.create(campaign=obj, email=email)
         return obj
@@ -185,7 +186,7 @@ class CampaignManager(models.Manager):
     
     
 class DeletedCampaign(object):
-    subject = u'<deleted from mailchimp>'
+    subject = '<deleted from mailchimp>'
 
 
 class Campaign(models.Model):

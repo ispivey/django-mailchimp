@@ -16,6 +16,7 @@ from django.http import (
 from mailchimp.settings import API_KEY, SECURE, REAL_CACHE, CACHE_TIMEOUT
 import re
 import warnings
+import collections
 
 class KeywordArguments(dict):
     def __getattr__(self, attr):
@@ -43,7 +44,7 @@ class Cache(object):
             self._clear_lock = False
         value = self._get(key)
         if value is None:
-            value = obj(*args, **kwargs) if callable(obj) else obj          
+            value = obj(*args, **kwargs) if isinstance(obj, collections.Callable) else obj          
             self._set(key, value)
         return value
     
@@ -112,7 +113,7 @@ class Paginator(object):
         self.get_link = get_link
         self.all_objects = objects
         self.objects_count = objects.count()
-        per_page = per_page() if callable(per_page) else per_page
+        per_page = per_page() if isinstance(per_page, collections.Callable) else per_page
         self.pages_count = int(float(self.objects_count) / float(per_page)) + 1
         self.bullets_count = 5
         self.per_page = per_page

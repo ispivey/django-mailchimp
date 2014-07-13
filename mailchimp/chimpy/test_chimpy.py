@@ -16,7 +16,8 @@ import random
 import md5
 import datetime
 
-import chimpy
+from . import chimpy
+import collections
 
 chimp = None
 
@@ -46,7 +47,7 @@ def test_ping():
 def test_lists():
     lists = chimp.lists()
     pprint.pprint(lists)
-    list_names = map(lambda x: x['name'], lists)
+    list_names = [x['name'] for x in lists]
     assert LIST_NAME in list_names
 
 
@@ -66,9 +67,9 @@ def test_list_subscribe_and_unsubscribe():
     assert result == True
 
     members = chimp.list_members(list_id())['data']
-    print members
-    emails = map(lambda x: x['email'], members)
-    print members
+    print(members)
+    emails = [x['email'] for x in members]
+    print(members)
     assert EMAIL_ADDRESS in emails
 
     result = chimp.list_unsubscribe(list_id(),
@@ -91,7 +92,7 @@ def test_list_batch_subscribe_and_batch_unsubscribe():
     assert result['add_count'] == 2
 
     members = chimp.list_members(list_id())['data']
-    emails = map(lambda x: x['email'], members)
+    emails = [x['email'] for x in members]
     assert EMAIL_ADDRESS in emails
     assert EMAIL_ADDRESS2 in emails
 
@@ -180,7 +181,7 @@ def test_create_delete_campaign():
 
     content = {'html': html}
     cid = chimp.campaign_create('regular', options, content, segment_opts=segment_opts)
-    assert isinstance(cid, basestring)
+    assert isinstance(cid, str)
 
     # check if the new campaign really is there
     campaigns = chimp.campaigns(filter_subject=subject)
@@ -215,7 +216,7 @@ def test_replicate_update_campaign():
     cid = chimp.campaign_create('regular', options, content)
 
     newcid = chimp.campaign_replicate(cid=cid)
-    assert isinstance(newcid, basestring)
+    assert isinstance(newcid, str)
 
     newsubject = 'Fresh subject ' + uid
     newtitle = 'Custom title ' + uid
@@ -303,7 +304,7 @@ def test_rss_campaign():
 
 if __name__ == '__main__':
     setup_module()
-    for f in globals().keys():
-        if f.startswith('test_') and callable(globals()[f]):
-            print f
+    for f in list(globals().keys()):
+        if f.startswith('test_') and isinstance(globals()[f], collections.Callable):
+            print(f)
             globals()[f]()

@@ -15,7 +15,7 @@ def transform_datetime(dt):
 def flatten(params, key=None):
     """ flatten nested dictionaries and lists """
     flat = {}
-    for name, val in params.items():
+    for name, val in list(params.items()):
         if key is not None and not isinstance(key, int):
             name = "%s[%s]" % (key, name)
         if isinstance(val, dict):
