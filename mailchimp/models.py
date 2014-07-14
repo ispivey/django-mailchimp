@@ -1,5 +1,5 @@
 from django.db import models
-from django.utils import simplejson
+import json as simplejson
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from django.core.urlresolvers import reverse
@@ -34,7 +34,7 @@ class QueueManager(models.Manager):
             kwargs['object_id'] = obj.pk
             kwargs['content_type'] = ContentType.objects.get_for_model(obj)
         return self.create(**kwargs)
-    
+
     def dequeue(self, limit=None):
         if limit:
             qs = self.filter(locked=False)[:limit]
@@ -42,7 +42,7 @@ class QueueManager(models.Manager):
             qs = self.filter(locked=False)
         for obj in qs:
              yield obj.send()
-    
+
     def get_or_404(self, *args, **kwargs):
         return get_object_or_404(self.model, *args, **kwargs)
 
@@ -79,9 +79,9 @@ class Queue(models.Model):
     content_object = generic.GenericForeignKey('content_type', 'object_id')
     extra_info = models.TextField(null=True)
     locked = models.BooleanField(default=False)
-    
+
     objects = QueueManager()
-    
+
     def send(self):
         """
         send (schedule) this queued object
@@ -92,12 +92,12 @@ class Queue(models.Model):
         # aquire lock
         self.locked = True
         self.save()
-        # get connection and send the mails 
+        # get connection and send the mails
         c = get_connection()
         tpl = c.get_template_by_id(self.template_id)
         content_data = dict([(str(k), v) for k,v in list(simplejson.loads(self.contents).items())])
         built_template = tpl.build(**content_data)
-        tracking = {'opens': self.tracking_opens, 
+        tracking = {'opens': self.tracking_opens,
                     'html_clicks': self.tracking_html_clicks,
                     'text_clicks': self.tracking_text_clicks}
         if self.google_analytics:
@@ -126,16 +126,16 @@ class Queue(models.Model):
         self.locked = False
         self.save()
         return False
-    
+
     def get_dequeue_url(self):
         return reverse('mailchimp_dequeue', kwargs={'id': self.id})
-    
+
     def get_cancel_url(self):
         return reverse('mailchimp_cancel', kwargs={'id': self.id})
-    
+
     def get_list(self):
         return get_connection().lists[self.list_id]
-    
+
     @property
     def object(self):
         """
@@ -148,14 +148,14 @@ class Queue(models.Model):
             except model.DoesNotExist:
                 return None
         return None
-    
+
     def get_object_admin_url(self):
         if not self.object:
             return ''
         name = 'admin:%s_%s_change' % (self.object._meta.app_label,
             self.object._meta.module_name)
         return reverse(name, args=(self.object.pk,))
-    
+
     def can_dequeue(self, user):
         if user.is_superuser:
             return True
@@ -163,8 +163,8 @@ class Queue(models.Model):
             return False
         if isinstance(getattr(self.object, 'mailchimp_can_dequeue', None), collections.Callable):
             return self.object.mailchimp_can_dequeue(user)
-        return user.has_perm('mailchimp.can_send') and user.has_perm('mailchimp.can_dequeue') 
-    
+        return user.has_perm('mailchimp.can_send') and user.has_perm('mailchimp.can_dequeue')
+
 
 class CampaignManager(models.Manager):
     def create(self, campaign_id, segment_opts, content_type=None, object_id=None,
@@ -180,11 +180,11 @@ class CampaignManager(models.Manager):
         for email in camp.list.filter_members(segment_opts):
             Reciever.objects.create(campaign=obj, email=email)
         return obj
-    
+
     def get_or_404(self, *args, **kwargs):
         return get_object_or_404(self.model, *args, **kwargs)
-    
-    
+
+
 class DeletedCampaign(object):
     subject = '<deleted from mailchimp>'
 
@@ -198,31 +198,31 @@ class Campaign(models.Model):
     object_id = models.PositiveIntegerField(null=True, blank=True)
     content_object = generic.GenericForeignKey('content_type', 'object_id')
     extra_info = models.TextField(null=True)
-    
+
     objects = CampaignManager()
-    
+
     class Meta:
         ordering = ['-sent_date']
         permissions = [('can_view', 'Can view Mailchimp information'),
                        ('can_send', 'Can send Mailchimp newsletters')]
         verbose_name = _('Mailchimp Log')
         verbose_name_plural = _('Mailchimp Logs')
-        
+
     def get_absolute_url(self):
         return reverse('mailchimp_campaign_info', kwargs={'campaign_id': self.campaign_id})
-    
+
     def get_object_admin_url(self):
         if not self.object:
             return ''
         name = 'admin:%s_%s_change' % (self.object._meta.app_label,
             self.object._meta.module_name)
         return reverse(name, args=(self.object.pk,))
-    
+
     def get_extra_info(self):
         if self.extra_info:
             return simplejson.loads(self.extra_info)
         return []
-    
+
     @property
     def object(self):
         """
@@ -235,7 +235,7 @@ class Campaign(models.Model):
             except model.DoesNotExist:
                 return None
         return None
-    
+
     @property
     def mc(self):
         try:
