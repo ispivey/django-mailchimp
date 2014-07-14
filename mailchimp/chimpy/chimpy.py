@@ -36,19 +36,20 @@ class Connection(object):
         self.url = '%s://%s/%s/' % (proto, api_host, self.version)
         self.opener = urllib.request.build_opener()
         self.opener.addheaders = [('Content-Type', 'application/x-www-form-urlencoded')]
-        
+
     def _rpc(self, method, **params):
         """make an rpc call to the server"""
 
-        params = urllib.parse.urlencode(params, doseq=True)
+        params = urllib.parse.urlencode(params, doseq=True).encode('utf-8')
 
         if _debug > 1:
             print(__name__, "making request with parameters")
             pprint.pprint(params)
             print(__name__, "encoded parameters:", params)
 
-        response = self.opener.open("%s?method=%s" %(self.url, method), params)
-        data = response.read()
+        response = self.opener.open("%s?method=%s" %(self.url, method),
+                                    data=params)
+        data = response.read().decode('utf-8')
         response.close()
 
         if _debug > 1:
@@ -232,14 +233,14 @@ class Connection(object):
 
     def list_merge_var_del(self, id, tag):
         return self._api_call(method='listMergeVarDel', id=id, tag=tag)
-    
+
     def list_webhooks(self, id):
         return self._api_call(method='listWebhooks', id=id)
-    
+
     # public static listWebhookAdd(string apikey, string id, string url, array actions, array sources)
     def list_webhook_add(self, id, url, actions, sources):
         return self._api_call(method='listWebhookAdd', id=id, url=url, actions=actions, sources=sources)
-    
+
     def list_webhook_del(self, id, url):
         return self._api_call(method='listWebhookDel', id=id, url=url)
 
